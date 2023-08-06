@@ -1,72 +1,70 @@
-import { GitHubBanner, Refine, WelcomePage } from "@refinedev/core";
-import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
-
-import { notificationProvider, RefineThemes } from "@refinedev/mantine";
-
-import {
-  ColorScheme,
-  ColorSchemeProvider,
-  Global,
-  MantineProvider,
-} from "@mantine/core";
-import { useLocalStorage } from "@mantine/hooks";
+import { Global, MantineProvider } from "@mantine/core";
 import { NotificationsProvider } from "@mantine/notifications";
-import routerBindings, {
-  DocumentTitleHandler,
-  UnsavedChangesNotifier,
-} from "@refinedev/react-router-v6";
+import { Refine } from "@refinedev/core";
+import { MantineInferencer } from "@refinedev/inferencer/mantine";
+import {
+  ErrorComponent,
+  ThemedLayoutV2,
+  RefineThemes,
+  notificationProvider,
+} from "@refinedev/mantine";
+import routerBindings, { NavigateToResource } from "@refinedev/react-router-v6";
 import dataProvider from "@refinedev/simple-rest";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Outlet, Route, Routes } from "react-router-dom";
 
-function App() {
-  const [colorScheme, setColorScheme] = useLocalStorage<ColorScheme>({
-    key: "mantine-color-scheme",
-    defaultValue: "light",
-    getInitialValueInEffect: true,
-  });
+import { BlogPostList } from "pages/blog-posts/list";
 
-  const toggleColorScheme = (value?: ColorScheme) =>
-    setColorScheme(value || (colorScheme === "dark" ? "light" : "dark"));
-
+const App = () => {
   return (
-    <BrowserRouter>
-      <GitHubBanner />
-      <RefineKbarProvider>
-        <ColorSchemeProvider
-          colorScheme={colorScheme}
-          toggleColorScheme={toggleColorScheme}
-        >
-          {/* You can change the theme colors here. example: theme={{ ...RefineThemes.Magenta, colorScheme:colorScheme }} */}
-          <MantineProvider
-            theme={{ ...RefineThemes.Blue, colorScheme: colorScheme }}
-            withNormalizeCSS
-            withGlobalStyles
+    <MantineProvider
+      theme={RefineThemes.Blue}
+      withNormalizeCSS
+      withGlobalStyles
+    >
+      <Global styles={{ body: { WebkitFontSmoothing: "auto" } }} />
+      <NotificationsProvider position="top-right">
+        <BrowserRouter>
+          <Refine
+            routerProvider={routerBindings}
+            dataProvider={dataProvider("https://api.fake-rest.refine.dev")}
+            notificationProvider={notificationProvider}
+            resources={[
+              {
+                name: "blog_posts",
+                list: "/blog-posts",
+                show: "/blog-posts/show/:id",
+                create: "/blog-posts/create",
+                edit: "/blog-posts/edit/:id",
+              },
+            ]}
           >
-            <Global styles={{ body: { WebkitFontSmoothing: "auto" } }} />
-            <NotificationsProvider position="top-right">
-              <Refine
-                notificationProvider={notificationProvider}
-                routerProvider={routerBindings}
-                dataProvider={dataProvider("https://api.fake-rest.refine.dev")}
-                options={{
-                  syncWithLocation: true,
-                  warnWhenUnsavedChanges: true,
-                  projectId: "a57QbT-gPMrwz-Noip6Q",
-                }}
+            <Routes>
+              <Route
+                element={
+                  <ThemedLayoutV2>
+                    <Outlet />
+                  </ThemedLayoutV2>
+                }
               >
-                <Routes>
-                  <Route index element={<WelcomePage />} />
-                </Routes>
-                <RefineKbar />
-                <UnsavedChangesNotifier />
-                <DocumentTitleHandler />
-              </Refine>
-            </NotificationsProvider>
-          </MantineProvider>
-        </ColorSchemeProvider>
-      </RefineKbarProvider>
-    </BrowserRouter>
-  );
-}
+                <Route
+                  index
+                  element={<NavigateToResource resource="blog_posts" />}
+                />
 
+                <Route path="blog-posts">
+                  <Route index element={<BlogPostList />} />
+                  <Route path="show/:id" element={<MantineInferencer />} />
+                  <Route path="edit/:id" element={<MantineInferencer />} />
+                  <Route path="create" element={<MantineInferencer />} />
+                </Route>
+
+                <Route path="*" element={<ErrorComponent />} />
+              </Route>
+            </Routes>
+          </Refine>
+        </BrowserRouter>
+      </NotificationsProvider>
+    </MantineProvider>
+  );
+};
 export default App;
