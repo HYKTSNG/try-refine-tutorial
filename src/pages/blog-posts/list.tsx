@@ -16,6 +16,11 @@ import {
   DateField,
 } from "@refinedev/mantine";
 
+import { useTranslation } from "react-i18next";
+
+import { ColumnSorter } from "../../components/table/ColumnSorter";
+import { ColumnFilter } from "../../components/table/ColumnFilter";
+
 export const BlogPostList: React.FC<IResourceComponentsProps> = () => {
   const columns = React.useMemo<ColumnDef<any>[]>(
     () => [
@@ -28,11 +33,17 @@ export const BlogPostList: React.FC<IResourceComponentsProps> = () => {
         id: "title",
         accessorKey: "title",
         header: "Title",
+        meta: {
+          filterOperator: "contains",
+        },
       },
       {
         id: "content",
         accessorKey: "content",
         header: "Content",
+        meta: {
+          filterOperator: "contains",
+        },
         cell: function render({ getValue }) {
           return (
             <MarkdownField value={getValue<string>()?.slice(0, 80) + "..."} />
@@ -49,7 +60,7 @@ export const BlogPostList: React.FC<IResourceComponentsProps> = () => {
           };
 
           const category = meta.categoryData?.data?.find(
-            (item) => item.id == getValue<any>()
+            (item) => item.id === getValue<any>()
           );
 
           return category?.title ?? "Loading...";
@@ -72,11 +83,14 @@ export const BlogPostList: React.FC<IResourceComponentsProps> = () => {
         id: "actions",
         accessorKey: "id",
         header: "Actions",
+        enableSorting: false,
+        enableColumnFilter: false,
         cell: function render({ getValue }) {
           return (
             <Group spacing="xs" noWrap>
               <ShowButton hideText recordItemId={getValue() as string} />
               <EditButton hideText recordItemId={getValue() as string} />
+              <DeleteButton hideText recordItemId={getValue() as string} />{" "}
             </Group>
           );
         },
@@ -115,24 +129,26 @@ export const BlogPostList: React.FC<IResourceComponentsProps> = () => {
     },
   }));
 
+  const { t } = useTranslation();
+
   return (
     <List>
       <ScrollArea>
-        <Table highlightOnHover>
+        <Table>
           <thead>
             {getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <th key={header.id}>
-                      {!header.isPlaceholder &&
-                        flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                    </th>
-                  );
-                })}
+                {headerGroup.headers.map((header) => (
+                  <th key={header.id}>
+                    {!header.isPlaceholder &&
+                      flexRender(
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
+                    <ColumnSorter column={header.column} />
+                    <ColumnFilter column={header.column} />
+                  </th>
+                ))}
               </tr>
             ))}
           </thead>

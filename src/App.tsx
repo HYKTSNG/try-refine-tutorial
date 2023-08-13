@@ -1,70 +1,91 @@
-import { Global, MantineProvider } from "@mantine/core";
-import { NotificationsProvider } from "@mantine/notifications";
-import { Refine } from "@refinedev/core";
-import { MantineInferencer } from "@refinedev/inferencer/mantine";
+import { GitHubBanner, Refine } from "@refinedev/core";
 import {
-  ErrorComponent,
-  ThemedLayoutV2,
-  RefineThemes,
   notificationProvider,
-} from "@refinedev/mantine";
-import routerBindings, { NavigateToResource } from "@refinedev/react-router-v6";
+  ThemedLayoutV2,
+  ErrorComponent,
+  RefineThemes,
+} from "@refinedev/antd";
 import dataProvider from "@refinedev/simple-rest";
-import { BrowserRouter, Outlet, Route, Routes } from "react-router-dom";
+import routerProvider, {
+  NavigateToResource,
+  UnsavedChangesNotifier,
+  DocumentTitleHandler,
+} from "@refinedev/react-router-v6";
+import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
 
-import { BlogPostList } from "pages/blog-posts/list";
+import { useTranslation } from "react-i18next";
 
-const App = () => {
+import { ConfigProvider } from "antd";
+
+import "@refinedev/antd/dist/reset.css";
+
+import { BlogPostEdit as PostEdit } from "pages/blog-posts/edit";
+import { BlogPostList as PostList } from "pages/blog-posts/list";
+import { BlogPostShow as PostShow } from "pages/blog-posts/show";
+import { BlogPostCreate as PostCreate } from "pages/blog-posts/create";
+
+import { Header } from "./components";
+
+const API_URL = "https://api.fake-rest.refine.dev";
+
+const App: React.FC = () => {
+  const { t, i18n } = useTranslation();
+
+  const i18nProvider = {
+    translate: (key: string, params: object) => t(key, params),
+    changeLocale: (lang: string) => i18n.changeLanguage(lang),
+    getLocale: () => i18n.language,
+  };
+
   return (
-    <MantineProvider
-      theme={RefineThemes.Blue}
-      withNormalizeCSS
-      withGlobalStyles
-    >
-      <Global styles={{ body: { WebkitFontSmoothing: "auto" } }} />
-      <NotificationsProvider position="top-right">
-        <BrowserRouter>
-          <Refine
-            routerProvider={routerBindings}
-            dataProvider={dataProvider("https://api.fake-rest.refine.dev")}
-            notificationProvider={notificationProvider}
-            resources={[
-              {
-                name: "blog_posts",
-                list: "/blog-posts",
-                show: "/blog-posts/show/:id",
-                create: "/blog-posts/create",
-                edit: "/blog-posts/edit/:id",
-              },
-            ]}
-          >
-            <Routes>
-              <Route
-                element={
-                  <ThemedLayoutV2>
-                    <Outlet />
-                  </ThemedLayoutV2>
-                }
-              >
-                <Route
-                  index
-                  element={<NavigateToResource resource="blog_posts" />}
-                />
+    <BrowserRouter>
+      <GitHubBanner />
+      <ConfigProvider theme={RefineThemes.Blue}>
+        <Refine
+          dataProvider={dataProvider(API_URL)}
+          routerProvider={routerProvider}
+          i18nProvider={i18nProvider}
+          resources={[
+            {
+              name: "posts",
+              list: "/posts",
+              create: "/posts/create",
+              edit: "/posts/edit/:id",
+              show: "/posts/show/:id",
+            },
+          ]}
+          notificationProvider={notificationProvider}
+          options={{
+            syncWithLocation: true,
+            warnWhenUnsavedChanges: true,
+          }}
+        >
+          <Routes>
+            <Route
+              element={
+                <ThemedLayoutV2 Header={Header}>
+                  <Outlet />
+                </ThemedLayoutV2>
+              }
+            >
+              <Route index element={<NavigateToResource resource="posts" />} />
 
-                <Route path="blog-posts">
-                  <Route index element={<BlogPostList />} />
-                  <Route path="show/:id" element={<MantineInferencer />} />
-                  <Route path="edit/:id" element={<MantineInferencer />} />
-                  <Route path="create" element={<MantineInferencer />} />
-                </Route>
-
-                <Route path="*" element={<ErrorComponent />} />
+              <Route path="posts">
+                <Route index element={<PostList />} />
+                <Route path="create" element={<PostCreate />} />
+                <Route path="edit/:id" element={<PostEdit />} />
+                <Route path="show/:id" element={<PostShow />} />
               </Route>
-            </Routes>
-          </Refine>
-        </BrowserRouter>
-      </NotificationsProvider>
-    </MantineProvider>
+
+              <Route path="*" element={<ErrorComponent />} />
+            </Route>
+          </Routes>
+          <UnsavedChangesNotifier />
+          <DocumentTitleHandler />
+        </Refine>
+      </ConfigProvider>
+    </BrowserRouter>
   );
 };
+
 export default App;
