@@ -16,8 +16,6 @@ import {
   DateField,
 } from "@refinedev/mantine";
 
-import { useTranslation } from "react-i18next";
-
 import { ColumnSorter } from "../../components/table/ColumnSorter";
 import { ColumnFilter } from "../../components/table/ColumnFilter";
 
@@ -128,8 +126,6 @@ export const BlogPostList: React.FC<IResourceComponentsProps> = () => {
       categoryData,
     },
   }));
-
-  const { t } = useTranslation();
 
   return (
     <List>
